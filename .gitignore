@@ -1,0 +1,28 @@
+# Секреты: ключ подписи Android и его пароль — никогда не коммитить
+android/keystore/
+android/keystore.properties
+*.jks
+*.keystore
+
+# Локальные пути
+android/local.properties
+
+# Результаты сборки (EXE и APK публикуются в GitHub Releases)
+dist/
+build/
+android/.gradle/
+android/app/build/
+android/build/
+*.log
+build_android.err
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE / ОС / локальные настройки Claude
+.claude/
+.idea/
+.vscode/
+Thumbs.db
+desktop.ini

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0a0e13">
+  <title>StoryFox Silence</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div class="bg"><div class="bg-blob b1"></div><div class="bg-blob b2"></div><div class="bg-blob b3"></div></div>
+
+  <div id="app">
+    <nav id="nav">
+      <div class="brand">
+        <svg viewBox="0 0 48 48" class="logo" aria-hidden="true">
+          <defs><radialGradient id="lglow"><stop offset="0" stop-color="#e3c08d" stop-opacity=".22"/><stop offset="1" stop-color="#e3c08d" stop-opacity="0"/></radialGradient>
+            <linearGradient id="lmoon" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e3c08d"/><stop offset="1" stop-color="#e3c08d" stop-opacity=".72"/></linearGradient></defs>
+          <circle cx="21.6" cy="22.6" r="22" fill="url(#lglow)"/>
+          <path fill="url(#lmoon)" fill-rule="evenodd" d="M21.6 9.6a13 13 0 1 0 0 26 13 13 0 1 0 0-26zM29.7 9.3a13 13 0 1 0 0 26 13 13 0 1 0 0-26z"/>
+          <path d="M7 27q14.6 9 29.2 0" fill="none" stroke="#a8c3a0" stroke-opacity=".35" stroke-width="1"/>
+          <path d="M5 28.5q16.6 11 33.2 0" fill="none" stroke="#a8c3a0" stroke-opacity=".25" stroke-width="1"/>
+          <circle cx="36" cy="13" r=".6" fill="#f4e7cc"/><circle cx="12.5" cy="9.6" r=".45" fill="#f4e7cc" opacity=".6"/>
+        </svg>
+        <span>StoryFox <b>Silence</b></span>
+      </div>
+      <button data-tab="practices" class="active"><span class="ind"><svg viewBox="0 0 24 24"><path d="M12 3c2 3 2 6 0 9-2-3-2-6 0-9zM4 10c3 0 6 2 8 5-3 1-6 0-8-5zm16 0c-3 0-6 2-8 5 3 1 6 0 8-5zM5 19h14"/></svg></span><span>Практики</span></button>
+      <button data-tab="music"><span class="ind"><svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm11-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/></svg></span><span>Музыка</span></button>
+      <button data-tab="progress"><span class="ind"><svg viewBox="0 0 24 24"><path d="M4 20V10m6 10V4m6 16v-7m4 7H2"/></svg></span><span>Прогресс</span></button>
+      <button data-tab="settings"><span class="ind"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span><span>Настройки</span></button>
+    </nav>
+    <main id="view"></main>
+  </div>
+
+  <div id="session" hidden></div>
+  <div id="miniplayer" hidden></div>
+  <div id="toast" hidden></div>
+  <div id="modal" hidden></div>
+
+  <script src="js/bridge.js"></script>
+  <script src="js/techniques.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
