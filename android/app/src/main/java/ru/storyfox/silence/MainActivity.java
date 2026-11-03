@@ -1,6 +1,8 @@
 package ru.storyfox.silence;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
@@ -89,6 +91,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        SessionService.stop(this);
         if (tts != null) tts.shutdown();
         pool.shutdownNow();
         web.destroy();
@@ -141,10 +144,26 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void keepAwake(boolean on) {
+        public void sessionState(boolean on, String title, boolean keepScreen) {
             runOnUiThread(() -> {
-                if (on) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                if (on && keepScreen) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                if (on) {
+                    // уведомление о практике; разрешение спрашиваем один раз, отказ не мешает работе
+                    if (Build.VERSION.SDK_INT >= 33
+                            && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                            && !getPreferences(MODE_PRIVATE).getBoolean("askedNotif", false)) {
+                        getPreferences(MODE_PRIVATE).edit().putBoolean("askedNotif", true).apply();
+                        requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1);
+                    }
+                    try {
+                        SessionService.start(MainActivity.this, title);
+                    } catch (RuntimeException e) {
+                        // ForegroundServiceStartNotAllowedException и т.п. — практика продолжится без службы
+                    }
+                } else {
+                    SessionService.stop(MainActivity.this);
+                }
             });
         }
 

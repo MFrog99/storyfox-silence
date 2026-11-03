@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Иконка приложения: тёмный фон, ореол, знак лисы -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#121B23"/>
+      <stop offset="1" stop-color="#0A0E13"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.52" r="0.5">
+      <stop offset="0" stop-color="#A8C3A0" stop-opacity=".30"/>
+      <stop offset="0.6" stop-color="#6F8F7B" stop-opacity=".10"/>
+      <stop offset="1" stop-color="#6F8F7B" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="warm" cx="0.78" cy="0.2" r="0.45">
+      <stop offset="0" stop-color="#E3C08D" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#E3C08D" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#warm)"/>
+  <circle cx="512" cy="540" r="440" fill="url(#halo)"/>
+  <g fill="none" stroke="#A8C3A0" stroke-width="5" stroke-linecap="round">
+    <path d="M232 800 Q512 900 792 800" stroke-opacity=".32"/>
+    <path d="M190 845 Q512 965 834 845" stroke-opacity=".2"/>
+  </g>
+  <svg x="182" y="150" width="660" height="660" viewBox="0 0 100 100">
+    MARK
+  </svg>
+</svg>

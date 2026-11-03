@@ -1,6 +1,6 @@
 /* StoryFox Silence — интерфейс. */
 const App = (() => {
-  const VERSION = '1.0.0';
+  const VERSION = '1.1.0';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -61,7 +61,9 @@ const App = (() => {
   const DEFAULT_SETTINGS = {
     voice: true, bells: true, cues: true, phaseVoice: false, interval: 0,
     ambient: 'none', ambientVol: 0.45, musicVol: 0.6, shuffle: true, theme: 'dark',
+    goal: null, keepScreen: true,
   };
+  const CUSTOM_DEFAULT = { in: 4, hold: 2, out: 6, holdout: 0 };
   const S = {
     settings: { ...DEFAULT_SETTINGS },
     collections: [{ id: 'default', name: 'Моя музыка', tracks: [] }],
@@ -177,6 +179,7 @@ const App = (() => {
   /* Кнопка «назад» на Android. Возвращает true, если событие обработано. */
   function back() {
     if (!$('#modal').hidden) { $('#modal').hidden = true; return true; }
+    if (!$('#onboarding').hidden) return true;
     if (Session.active()) { Session.requestExit(); return true; }
     if (S.route) { S.route = null; render(); return true; }
     if (S.tab === 'music' && S.openPlaylist) { S.openPlaylist = null; render(); return true; }
@@ -193,13 +196,33 @@ const App = (() => {
     return 'Добрый вечер';
   }
 
+  const goalOf = () => GOALS.find((g) => g.id === S.settings.goal) || null;
+
+  /* Практика дня: время суток + цель пользователя, меняется раз в сутки. */
   function dailyTechnique() {
     const h = new Date().getHours();
-    const pool = h >= 21 || h < 5 ? TECHNIQUES.filter((t) => t.category === 'sleep' || t.category === 'relax')
-      : h < 11 ? TECHNIQUES.filter((t) => t.category === 'breath' || t.category === 'focus')
-        : TECHNIQUES.filter((t) => t.category !== 'sleep');
+    const goal = goalOf();
+    let cats = h >= 21 || h < 5 ? ['sleep', 'relax'] : h < 11 ? ['breath', 'focus'] : null;
+    if (goal && !(h >= 21 || h < 5)) cats = goal.cats;
+    const pool = TECHNIQUES.filter((t) => !t.custom && (cats ? cats.includes(t.category) : t.category !== 'sleep'));
     const n = Math.floor(Date.now() / 86400000);
     return pool[n % pool.length];
+  }
+
+  /* Обновляет фазы «Своего ритма» из сохранённых настроек. */
+  function applyCustom() {
+    const t = techById('custom');
+    const c = { ...CUSTOM_DEFAULT, ...(S.prefs.customRhythm || {}) };
+    t.phases = [['in', c.in], ['hold', c.hold], ['out', c.out], ['holdout', c.holdout]]
+      .filter(([, sec]) => sec > 0).map(([kind, sec]) => ({ kind, sec }));
+    t.short = `Ваш ритм ${c.in}-${c.hold}-${c.out}-${c.holdout}`;
+    return c;
+  }
+
+  function quickCalm() {
+    Sound.unlock();
+    Music.stop(300);
+    Session.start(techById('sigh'), { minutes: 1, ambient: S.settings.ambient, coll: '' });
   }
 
   function tcard(t) {
@@ -219,12 +242,24 @@ const App = (() => {
     const list = S.filter === 'all' ? TECHNIQUES
       : S.filter === 'fav' ? TECHNIQUES.filter((t) => S.favorites.includes(t.id))
         : TECHNIQUES.filter((t) => t.category === S.filter);
+    const goal = goalOf();
+    const forGoal = goal ? TECHNIQUES.filter((t) => t.category === goal.cats[0] && t.id !== daily.id && !t.custom).slice(0, 3) : [];
     view.innerHTML = `<div class="page">
-      <div class="hero"><div class="eyebrow">${greeting()}</div><h1>Найдите свою тишину</h1></div>
+      <div class="hero hero-row">
+        <img src="img/logo.svg" class="hero-logo" alt="">
+        <div><div class="eyebrow">${greeting()}</div><h1>Найдите свою тишину</h1></div>
+      </div>
       <div class="daily" data-tech="${daily.id}" style="${catStyle(catOf(daily.category))}">
         <div class="orb-mini"></div>
         <div><div class="label">Практика дня</div><h2>${esc(daily.title)}</h2><p>${esc(daily.short)} · ${daily.minutes} мин</p></div>
       </div>
+      <button class="quick" id="quick">
+        <span class="q-ic"><svg viewBox="0 0 24 24"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/></svg></span>
+        <span class="q-t"><b>Минута спокойствия</b><span>Быстрый сброс стресса: двойной вдох и долгий выдох</span></span>
+        <span class="q-go">${playSvg}</span>
+      </button>
+      ${forGoal.length ? `<div class="section-title"><h2>Для вашей цели</h2><span class="hint">${esc(goal.title)}</span></div>
+        <div class="grid">${forGoal.map(tcard).join('')}</div>` : ''}
       <div class="stats-row">
         ${stat('flame', 'var(--sand)', st.streak, plural(st.streak, 'день', 'дня', 'дней') + ' подряд')}
         ${stat('clock', 'var(--sage)', st.minutes, 'минут всего')}
@@ -240,10 +275,12 @@ const App = (() => {
     </div>`;
     $$('[data-tech]', view).forEach((el) => { el.onclick = () => go({ name: 'detail', id: el.dataset.tech }); });
     $$('[data-f]', view).forEach((el) => { el.onclick = () => { S.filter = el.dataset.f; renderPractices(); }; });
+    $('#quick').onclick = quickCalm;
   }
 
   // ------------------------------------------------------------ детали техники
   function renderDetail(t) {
+    const rhythm = t.custom ? applyCustom() : null;
     const c = catOf(t.category);
     const pref = S.prefs[t.id] || {};
     const minutes = pref.minutes || t.minutes;
@@ -271,6 +308,11 @@ const App = (() => {
             <ul class="how">${t.how.map((s) => `<li>${esc(s)}</li>`).join('')}</ul></div>
         </div>
         <div class="card setup">
+          ${rhythm ? `<div class="row"><label class="t">Ритм, секунд</label><div class="rhythm">
+            ${[['in', 'Вдох', 2], ['hold', 'Задержка', 0], ['out', 'Выдох', 2], ['holdout', 'Пауза', 0]].map(([k, l, min]) => `
+              <div class="step" data-k="${k}" data-min="${min}"><span>${l}</span>
+                <div class="stp"><button data-d="-1">−</button><b>${rhythm[k]}</b><button data-d="1">+</button></div></div>`).join('')}
+          </div></div>` : ''}
           <div class="row"><label class="t">Длительность, минут</label>
             <div class="seg" id="dur">${durations.map((d) => `<button data-v="${d}" class="${d === minutes ? 'active' : ''}">${d}</button>`).join('')}</div></div>
           <div class="row"><label class="t">Звуки природы</label>
@@ -291,6 +333,21 @@ const App = (() => {
       renderDetail(t);
     };
     $$('#dur button').forEach((b) => { b.onclick = () => { savePref({ minutes: +b.dataset.v }); $$('#dur button').forEach((x) => x.classList.toggle('active', x === b)); }; });
+    $$('.rhythm .step').forEach((st) => {
+      $$('button', st).forEach((b) => {
+        b.onclick = () => {
+          const k = st.dataset.k;
+          const r = { ...CUSTOM_DEFAULT, ...(S.prefs.customRhythm || {}) };
+          r[k] = Math.max(+st.dataset.min, Math.min(16, r[k] + +b.dataset.d));
+          S.prefs.customRhythm = r;
+          save('prefs');
+          applyCustom();
+          $('b', st).textContent = r[k];
+          $('.d-hero .sub').textContent = t.short;
+          $('.d-hero .tags .tag:nth-child(2)').textContent = t.phases.map((p) => p.sec).join('-');
+        };
+      });
+    });
     $('#amb').onchange = (e) => savePref({ ambient: e.target.value });
     $('#coll').onchange = (e) => savePref({ coll: e.target.value });
     $('#start').onclick = () => {
@@ -323,7 +380,7 @@ const App = (() => {
       el.hidden = false;
       el.setAttribute('style', catStyle(catOf(t.category)));
       document.body.classList.add('in-session');
-      Native.keepAwake(true);
+      Native.sessionState(true, t.title, S.settings.keepScreen);
       drawStage();
       if (S.settings.bells) Sound.bell(0.7);
       Sound.startAmbient(opts.ambient, S.settings.ambientVol);
@@ -555,7 +612,7 @@ const App = (() => {
       el.hidden = true;
       el.innerHTML = '';
       document.body.classList.remove('in-session');
-      Native.keepAwake(false);
+      Native.sessionState(false);
       render();
     }
 
@@ -943,9 +1000,14 @@ const App = (() => {
         <div class="item"><div class="t">Тема</div>
           <div class="seg" id="theme">${[['dark', 'Тёмная'], ['light', 'Светлая'], ['system', 'Как в системе']].map(([v, l]) => `<button data-v="${v}" class="${st.theme === v ? 'active' : ''}">${l}</button>`).join('')}</div></div>
       </div>
+      <div class="section-title"><h2>Ваша цель</h2><span class="hint">влияет на «Практику дня»</span></div>
+      <div class="card settings">
+        <div class="seg" id="goal">${GOALS.map((g) => `<button data-v="${g.id}" class="${st.goal === g.id ? 'active' : ''}">${g.title}</button>`).join('')}</div>
+      </div>
       <div class="section-title"><h2>Сессия</h2></div>
       <div class="card settings">
         ${sw('voice', 'Голосовые подсказки', 'Озвучивание инструкций синтезатором речи')}
+        ${Native.platform === 'android' ? sw('keepScreen', 'Не выключать экран', 'Во время практики. Если выключить — звук продолжит играть в фоне') : ''}
         ${sw('phaseVoice', 'Озвучивать фазы дыхания', '«Вдох», «Выдох» голосом в дыхательных техниках')}
         ${sw('cues', 'Звуковые сигналы фаз', 'Мягкий тон при смене вдоха и выдоха')}
         ${sw('bells', 'Колокол', 'Поющая чаша в начале и в конце практики')}
@@ -973,6 +1035,13 @@ const App = (() => {
         $$('#theme button').forEach((x) => x.classList.toggle('active', x === b));
       };
     });
+    $$('#goal button').forEach((b) => {
+      b.onclick = () => {
+        st.goal = st.goal === b.dataset.v ? null : b.dataset.v;
+        save('settings');
+        $$('#goal button').forEach((x) => x.classList.toggle('active', x.dataset.v === st.goal));
+      };
+    });
     $('#interval').onchange = (e) => { st.interval = +e.target.value; save('settings'); };
     $('#ambient').onchange = (e) => { st.ambient = e.target.value; save('settings'); };
     $('#test').onclick = () => { Sound.bell(0.7); setTimeout(() => Native.speak('Сделайте глубокий вдох. И медленный выдох.'), 600); };
@@ -984,9 +1053,66 @@ const App = (() => {
     };
   }
 
+  // ------------------------------------------------------------ приветствие
+  function showOnboarding() {
+    const el = $('#onboarding');
+    let step = 0;
+    let goal = S.settings.goal;
+    const finish = (thenCalm) => {
+      S.settings.goal = goal;
+      save('settings');
+      Native.call('store_set', 'onboarded', true).catch(() => {});
+      el.classList.add('leaving');
+      setTimeout(() => { el.hidden = true; el.classList.remove('leaving'); el.innerHTML = ''; render(); if (thenCalm) quickCalm(); }, 450);
+    };
+    const draw = () => {
+      const dots = `<div class="ob-dots">${[0, 1, 2].map((i) => `<i class="${i === step ? 'on' : ''}"></i>`).join('')}</div>`;
+      if (step === 0) {
+        el.innerHTML = `<div class="ob">
+          <div class="ob-logo"><img src="img/logo.svg" alt=""></div>
+          <div class="ob-word">StoryFox<b>Silence</b></div>
+          <p class="ob-lead">Тихое место для вашего ума</p>
+          <p class="ob-text">Дыхательные техники, медитации с голосом, звуки природы и ваша музыка из Яндекс Музыки.</p>
+          <button class="btn primary big" id="ob-next">Начать</button>${dots}</div>`;
+      } else if (step === 1) {
+        el.innerHTML = `<div class="ob">
+          <h1 class="ob-h">Что для вас сейчас важнее?</h1>
+          <p class="ob-text">Мы подберём практику дня. Цель можно поменять в настройках.</p>
+          <div class="ob-goals">${GOALS.map((g) => `<button class="ob-goal ${goal === g.id ? 'on' : ''}" data-g="${g.id}"><b>${g.title}</b><span>${g.hint}</span></button>`).join('')}</div>
+          <button class="btn primary big" id="ob-next" ${goal ? '' : 'disabled'}>Продолжить</button>
+          <button class="btn ghost" id="ob-skip">Пропустить</button>${dots}</div>`;
+      } else {
+        el.innerHTML = `<div class="ob">
+          <div class="ob-orb"></div>
+          <h1 class="ob-h">Начнём с одной минуты</h1>
+          <p class="ob-text">Двойной вдох носом и долгий выдох — самый быстрый способ снять напряжение. Попробуйте прямо сейчас.</p>
+          <button class="btn primary big" id="ob-calm">${playSvg} Минута спокойствия</button>
+          <button class="btn ghost" id="ob-later">Позже</button>${dots}</div>`;
+      }
+      const next = $('#ob-next', el);
+      if (next) next.onclick = () => { step++; draw(); };
+      const skip = $('#ob-skip', el);
+      if (skip) skip.onclick = () => { goal = null; step++; draw(); };
+      $$('[data-g]', el).forEach((b) => {
+        b.onclick = () => {
+          goal = b.dataset.g;
+          $$('[data-g]', el).forEach((x) => x.classList.toggle('on', x === b));
+          next.disabled = false;
+        };
+      });
+      const calm = $('#ob-calm', el);
+      if (calm) calm.onclick = () => finish(true);
+      const later = $('#ob-later', el);
+      if (later) later.onclick = () => finish(false);
+    };
+    el.hidden = false;
+    draw();
+  }
+
   // ------------------------------------------------------------ запуск
   async function init() {
     $$('#nav button').forEach((b) => { b.onclick = () => setTab(b.dataset.tab); });
+    let onboarded = true;
     try {
       const data = await Native.call('store_all');
       if (data.settings) S.settings = { ...DEFAULT_SETTINGS, ...data.settings };
@@ -994,10 +1120,13 @@ const App = (() => {
       if (Array.isArray(data.history)) S.history = data.history;
       if (Array.isArray(data.favorites)) S.favorites = data.favorites;
       if (data.prefs) S.prefs = data.prefs;
+      onboarded = !!data.onboarded || S.history.length > 0;
     } catch (e) { console.warn('load failed', e); }
     S.activeColl = S.collections[0].id;
+    applyCustom();
     applyTheme();
     render();
+    if (!onboarded) showOnboarding();
     loadAccount();
   }
 

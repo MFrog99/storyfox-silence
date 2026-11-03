@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="270" android:startColor="#121B23" android:endColor="#0A0E13" />
+        </shape>
+    </item>
+    <!-- мягкий шалфейный ореол за знаком -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:centerX="0.5"
+                android:centerY="0.48"
+                android:gradientRadius="54dp"
+                android:startColor="#3DA8C3A0"
+                android:centerColor="#126F8F7B"
+                android:endColor="#006F8F7B" />
+        </shape>
+    </item>
+</layer-list>

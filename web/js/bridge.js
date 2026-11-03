@@ -106,10 +106,14 @@ const Native = (() => {
     if ('speechSynthesis' in window) speechSynthesis.cancel();
   }
 
-  function keepAwake(on) { if (android) android.keepAwake(!!on); }
+  /* Начало/конец практики. На Android запускает фоновую службу с уведомлением,
+   * чтобы звук и таймер не останавливались при выключенном экране. */
+  function sessionState(on, title, keepScreen) {
+    if (android) android.sessionState(!!on, title || '', !!keepScreen);
+  }
 
   /* Цвет системных панелей Android под тему интерфейса. */
   function setTheme(dark) { if (android && android.setTheme) android.setTheme(!!dark); }
 
-  return { platform, call, _resolve, openUrl, copy, speak, stopSpeech, keepAwake, setTheme };
+  return { platform, call, _resolve, openUrl, copy, speak, stopSpeech, sessionState, setTheme };
 })();

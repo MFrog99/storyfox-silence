@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Силуэт головы лисы для строки состояния (одноцветный) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M18,20 L38,41 Q50,36 62,41 L82,20 Q90,44 85,59 Q77,77 50,92 Q23,77 15,59 Q10,44 18,20Z M30,55.5 Q36,61 42,55.5 L41,54 Q36,58 31,54Z M58,55.5 Q64,61 70,55.5 L69,54 Q64,58 59,54Z" />
+</vector>
